@@ -1,0 +1,110 @@
+<html>
+    <head>
+        <style>
+            .codes {
+                position: absolute;
+                width: 80%;
+                height: 90%;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                border: 1 px #333;
+            }
+
+            .codes textarea {
+                height: 100%;
+                width: 49%;
+                margin: auto;
+                display: inline-block;
+            }
+        </style>
+        <script>
+            function RecorderConstructor(editor) {
+                buffer = [];
+                var recordingStartTimestmap = Date.now();
+
+                function startRecording() {
+                    editor.addEventListener('keydown', handleUserEvent, true);
+                }
+
+                function stopRecording() {
+                    editor.removeEventListener('keydown', handleUserEvent, true);
+                }
+
+                function handleUserEvent(event) {
+                    aaa = event;
+                    var eventTimeStamp = Date.now();
+                    var keyInBuffer = eventTimeStamp - recordingStartTimestmap;
+                   
+                    buffer[keyInBuffer] = event.key;
+                }
+
+                function getBuffer() {
+                    return buffer.concat();
+                }
+
+              return {
+                  startRecording: startRecording,
+                  stopRecording: stopRecording,
+                  getBuffer: getBuffer
+              }  
+            };
+
+            function PlayerConstructor(playerArea) {
+                var playerInterval = null;
+
+                function playBuffer(buffer) {
+                    var printedBuffer = [];
+                    var playStart = Date.now();
+
+                    playerInterval = setInterval(function() {
+                        var currentMoment = Date.now();
+                        var bufferKey = currentMoment - playStart;
+
+                        var userEventsTimestamps = Object.keys(buffer);
+                        for(var i=0; i<userEventsTimestamps.length; i++) {
+                            var userEventTimestamp = userEventsTimestamps[i];
+
+                            if (userEventTimestamp <= bufferKey) {
+                                var valueToBePrinted = buffer[userEventTimestamp];
+                                delete buffer[userEventTimestamp];
+
+                                playerArea.value += valueToBePrinted;
+                                continue;
+                            }
+
+                            break;
+                        }
+                    }, 50);
+                }
+
+                return {
+                    playBuffer: playBuffer
+                }
+            }
+
+            function init() {
+                var editor = document.getElementById('editor');
+                
+                recorder = RecorderConstructor(editor);
+                recorder.startRecording();
+            }
+
+            function play() {
+                recorder.stopRecording();
+
+                var playArea = document.getElementById('player');
+                var player = PlayerConstructor(playArea);
+
+                player.playBuffer(recorder.getBuffer());
+            }
+        </script>
+    </head>
+    <body onload="init()">
+        <button onclick="play()">Play</button>
+        <div class="codes">
+            <textarea id="editor"></textarea>
+            <textarea id="player"></textarea>
+        </div>
+    </body>
+</html>
